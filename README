@@ -1,0 +1,6 @@
+setsid
+------
+
+setsid(1) is a wrapper around setsid(2).
+
+This is a re-implementation of the original Linux utility.
