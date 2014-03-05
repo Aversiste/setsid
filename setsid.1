@@ -17,25 +17,47 @@
 .Os
 .Sh NAME
 .Nm setsid
-.Nd run a program in a new session
+.Nd invoke a command in a new session
 .Sh SYNOPSIS
 .Nm
-.Ar program
-.Op Ar arg
+.Ar utility
+.Op Ar arg ...
 .Sh DESCRIPTION
 The
 .Nm
-utility
+command allows the specified utility to be run in a new
+session. To do this,
+.Nm
+looks if it is already a session leader and calls
 .Xr fork 2
-and run
-.Ar program
-in the child process after a call to
-.Xr setsid 2 .
+if not. Then it calls
+.Xr setsid 2
+and executes
+.Ar utility
+along with any arguments.
 .Sh EXIT STATUS
 The
 .Nm
-utility exits with the value as the child process.
+utility exits with one of the following values:
+.Pp
+.Bl -tag -width Ds -offset indent -compact
+.It 126
+The
+.Ar utility
+was found but could not be invoked.
+.It 127
+The
+.Ar utility
+could not be found or an error occurred in
+.Nm .
+.El
+.Pp
+Otherwise, the exit status of
+.Nm
+shall be that of
+.Ar utility .
 .Sh SEE ALSO
+.Xr nohup 1
 .Xr setsid 2
 .Sh AUTHORS
 The

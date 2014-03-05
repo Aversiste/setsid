@@ -17,11 +17,22 @@
 #include <sys/wait.h>
 
 #include <err.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 static void usage(void);
+
+/*
+ * setsid shall exit like nohup, with one of the following values:
+ * 126 - The utility was found but could not be invoked.
+ * 127 - An error occurred in the nohup utility, or the utility could
+ *       not be found.
+ */
+#define EXIT_NOEXEC     126
+#define EXIT_NOTFOUND   127
+#define EXIT_MISC       127
 
 int
 main(int argc, char *argv[]) {
@@ -36,6 +47,10 @@ main(int argc, char *argv[]) {
 			/* NOTREACHED */
 		}
 	}
+	if (argc < 2) {
+		usage();
+		/* NOTREACHED */
+	}
 
 	if (getpgrp() == getpid()) {
 		pid = fork();
@@ -44,11 +59,11 @@ main(int argc, char *argv[]) {
 		case 0:
 			break;
 		case -1:
-			err(1, "fork");
+			err(EXIT_MISC, "fork");
 			/* NOTREACHED */
 		default:
 			if (wait(&status) != pid)
-				err(1, "wait");
+				err(EXIT_MISC, "wait");
 			if (WIFEXITED(status))
 				return WEXITSTATUS(status);
 			err(status, "child did not exit normally");
@@ -56,17 +71,19 @@ main(int argc, char *argv[]) {
 	}
 
 	if (setsid() < 0) {
-		err(1, "setsid");
+		err(EXIT_MISC, "setsid");
 	}
 
 	execvp(argv[1], argv + 1);
-
-	err(1, "execvp");
+	if (errno == ENOENT) {
+		err(EXIT_NOTFOUND, "%s", argv[1]);
+	}
+	err(EXIT_NOEXEC, "execvp");
 }
 
 static void
 usage(void) {
 	fprintf(stderr, "usage: %s program [argument ...]\n", getprogname());
-	exit(1);
+	exit(EXIT_MISC);
 }
 
